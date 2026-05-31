@@ -1,0 +1,37 @@
+# .github/workflows/release.yml
+# Triggered on: git tag push matching v*  (e.g. v0.1.0)
+# Builds octo for Linux + macOS (amd64 + arm64) and uploads to GitHub Release.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Cross-compile and release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Build all platforms
+        run: |
+          GOOS=linux  GOARCH=amd64 go build -ldflags="-s -w" -o octo-linux-amd64  .
+          GOOS=linux  GOARCH=arm64 go build -ldflags="-s -w" -o octo-linux-arm64  .
+          GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o octo-darwin-amd64 .
+          GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o octo-darwin-arm64 .
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: octo-*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

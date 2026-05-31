@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>octo — share your terminal</title>
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --bg-card:   #161b22;
+      --bg-code:   #1c2128;
+      --border:    #30363d;
+      --fg:        #e6edf3;
+      --fg-muted:  #8b949e;
+      --green:     #3fb950;
+      --green-dim: #1a4327;
+      --blue:      #58a6ff;
+      --purple:    #bc8cff;
+      --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      --radius:    8px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--fg); font-family: var(--font-sans); line-height: 1.6; min-height: 100vh; }
+
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 40px; border-bottom: 1px solid var(--border);
+      position: sticky; top: 0;
+      background: rgba(13,17,23,.85); backdrop-filter: blur(8px); z-index: 10;
+    }
+    .nav-logo { font-family: var(--font-mono); font-size: 18px; font-weight: 700; color: var(--fg); text-decoration: none; }
+    .nav-logo span { color: var(--green); }
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a { color: var(--fg-muted); text-decoration: none; font-size: 14px; transition: color .15s; }
+    .nav-links a:hover { color: var(--fg); }
+    .nav-gh {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+      color: var(--fg) !important; font-size: 13px; transition: border-color .15s;
+    }
+    .nav-gh:hover { border-color: var(--fg-muted) !important; }
+
+    .hero { max-width: 860px; margin: 0 auto; padding: 96px 40px 64px; text-align: center; }
+    .hero-badge {
+      display: inline-block; padding: 4px 12px;
+      border: 1px solid var(--green-dim); background: rgba(63,185,80,.08);
+      color: var(--green); border-radius: 20px; font-size: 12px;
+      font-family: var(--font-mono); margin-bottom: 24px; letter-spacing: .04em;
+    }
+    h1 { font-size: clamp(2rem,5vw,3.25rem); font-weight: 700; letter-spacing: -.02em; line-height: 1.15; margin-bottom: 20px; }
+    h1 em { font-style: normal; color: var(--green); }
+    .hero-sub { font-size: clamp(1rem,2vw,1.2rem); color: var(--fg-muted); max-width: 540px; margin: 0 auto 48px; }
+
+    .install-box {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--bg-code); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 14px 20px; font-family: var(--font-mono); font-size: 15px; color: var(--fg);
+      margin-bottom: 12px; width: 100%; max-width: 520px; transition: border-color .15s;
+    }
+    .install-box:hover { border-color: var(--fg-muted); }
+    .install-box .prompt { color: var(--green); user-select: none; }
+    .install-box .cmd { flex: 1; text-align: left; }
+    .copy-btn {
+      background: none; border: 1px solid var(--border); border-radius: 5px;
+      color: var(--fg-muted); font-family: var(--font-mono); font-size: 11px;
+      padding: 3px 8px; cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .copy-btn:hover { border-color: var(--fg-muted); color: var(--fg); }
+    .copy-btn.copied { border-color: var(--green); color: var(--green); }
+    .hero-note { font-size: 12px; color: var(--fg-muted); margin-bottom: 48px; }
+    .hero-note a { color: var(--blue); text-decoration: none; }
+    .hero-note a:hover { text-decoration: underline; }
+
+    .terminal-preview {
+      max-width: 680px; margin: 0 auto;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+    .terminal-bar {
+      background: var(--bg-card); padding: 10px 16px;
+      display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border);
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; } .dot-y { background: #febc2e; } .dot-g { background: #28c840; }
+    .terminal-body {
+      background: #0d0d0d; padding: 20px 24px;
+      font-family: var(--font-mono); font-size: 13px; line-height: 1.7; text-align: left;
+    }
+    .t-prompt { color: var(--green); } .t-cmd { color: var(--fg); }
+    .t-out { color: var(--fg-muted); }
+    .t-url-local { color: var(--blue); } .t-url-remote { color: var(--purple); }
+    .t-cursor {
+      display: inline-block; width: 8px; height: 14px;
+      background: var(--green); vertical-align: middle;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .section { max-width: 860px; margin: 0 auto; padding: 80px 40px; }
+    .section-label { font-family: var(--font-mono); font-size: 12px; color: var(--green); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 12px; }
+    .section h2 { font-size: clamp(1.4rem,3vw,2rem); font-weight: 700; letter-spacing: -.02em; margin-bottom: 48px; }
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .step { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .step-num { font-family: var(--font-mono); font-size: 11px; color: var(--green); margin-bottom: 10px; letter-spacing: .05em; }
+    .step h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+    .step p { font-size: 14px; color: var(--fg-muted); line-height: 1.5; }
+
+    footer { border-top: 1px solid var(--border); padding: 28px 40px; text-align: center; font-size: 13px; color: var(--fg-muted); }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      nav { padding: 14px 20px; }
+      .hero { padding: 64px 20px 48px; }
+      .section { padding: 56px 20px; }
+      footer { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/"><span>▸</span> octo</a>
+  <div class="nav-links">
+    <a href="#how-it-works">How it works</a>
+    <a href="https://github.com/abhishek-sonje/octo" class="nav-gh">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-badge">v1 — open source</div>
+  <h1>Share your terminal<br>with <em>one command</em></h1>
+  <p class="hero-sub">
+    Run <code style="font-family:var(--font-mono);color:var(--green)">octo</code> on your machine.
+    Get a shareable link. Anyone clicks it — they get a live terminal session in their browser.
+    No agents. No port forwarding. No signup.
+  </p>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+    <div class="install-box">
+      <span class="prompt">$</span>
+      <span class="cmd" id="install-cmd">curl -fsSL octo.sh/install | sh</span>
+      <button class="copy-btn" id="copy-btn" onclick="copyInstall()">copy</button>
+    </div>
+    <p class="hero-note">
+      macOS &amp; Linux &nbsp;·&nbsp; single Go binary, zero dependencies &nbsp;·&nbsp;
+      <a href="https://github.com/abhishek-sonje/octo">view source</a>
+    </p>
+  </div>
+
+  <div class="terminal-preview">
+    <div class="terminal-bar">
+      <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-prompt">~</span> <span class="t-cmd">octo</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-out">✓ octo started</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-out">  Local:&nbsp;&nbsp; </span><span class="t-url-local">http://192.168.1.5:7681?token=f3a9…</span></div>
+      <div><span class="t-out">  Remote: </span><span class="t-url-remote">https://octo.sh/s/x9k2m</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-out">  Ctrl+C to stop</span></div>
+      <div>&nbsp;</div>
+      <div><span class="t-prompt">~</span> <span class="t-cursor"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how-it-works">
+  <div class="section-label">How it works</div>
+  <h2>Zero infrastructure. One binary.</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">01 —</div>
+      <h3>Spawn a shell</h3>
+      <p>octo starts bash or zsh in a PTY — exactly like your terminal does. Full ANSI, colours, interactive programs.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">02 —</div>
+      <h3>Open a tunnel</h3>
+      <p>The binary connects outbound to the octo relay. No firewall rules, no port forwarding, no VPN.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">03 —</div>
+      <h3>Share the link</h3>
+      <p>Send the URL to anyone. They open it in a browser — xterm.js renders a full terminal. Nothing to install.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">04 —</div>
+      <h3>Close when done</h3>
+      <p>Ctrl+C kills the session and the tunnel. Nothing is persisted. Nothing is logged on the relay.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>
+    Built by <a href="https://github.com/abhishek-sonje">abhishek-sonje</a> &nbsp;·&nbsp;
+    <a href="https://github.com/abhishek-sonje/octo">Open source on GitHub</a> &nbsp;·&nbsp;
+    <a href="/install">install.sh</a>
+  </p>
+</footer>
+
+<script>
+  function copyInstall() {
+    const cmd = document.getElementById('install-cmd').textContent;
+    const btn = document.getElementById('copy-btn');
+    navigator.clipboard.writeText(cmd).then(() => {
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
