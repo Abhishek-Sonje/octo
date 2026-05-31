@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -104,11 +105,16 @@ func RunLocal(opts LocalOpts) error {
 		}
 	}()
 
-	// ── Step 5: Detect local network IP ─────────────────────────────────────
-	localIP := localNetworkIP()
+	// ── Step 5: (local IP detection removed — always use localhost for WSL2 compat)
 
 	// ── Step 6: Connect tunnel ───────────────────────────────────────────────
 	if !opts.NoTunnel {
+		// Allow overriding the cloud server via env var for local testing:
+		//   OCTO_SERVER=ws://localhost:8080 ./octo
+		if override := os.Getenv("OCTO_SERVER"); override != "" {
+			tunnel.CloudServer = override
+		}
+
 		// Spawn a dedicated PTY for the tunnel session.
 		// This is separate from any /ws local session — each gets its own shell.
 		tunnelPTY, err := internalty.Spawn(opts.Shell)
@@ -124,10 +130,16 @@ func RunLocal(opts LocalOpts) error {
 	}
 
 	// ── Step 7: Print URLs ───────────────────────────────────────────────────
+	// Derive the remote HTTP URL from tunnel.CloudServer (ws:// → http://, wss:// → https://)
+	// so it's always correct whether pointing at localhost or production.
+	remoteBase := strings.NewReplacer("wss://", "https://", "ws://", "http://").
+		Replace(tunnel.CloudServer)
+
 	fmt.Printf("\n✓ octo started\n\n")
-	fmt.Printf("  Local:   http://%s:%d?token=%s\n", localIP, opts.Port, token)
+	// Always print localhost for local URL — LAN IP breaks on WSL2 browsers
+	fmt.Printf("  Local:   http://localhost:%d?token=%s\n", opts.Port, token)
 	if !opts.NoTunnel {
-		fmt.Printf("  Remote:  https://octo.sh/s/%s\n", sessionID)
+		fmt.Printf("  Remote:  %s/s/%s\n", remoteBase, sessionID)
 	}
 	fmt.Printf("\n  Ctrl+C to stop\n\n")
 

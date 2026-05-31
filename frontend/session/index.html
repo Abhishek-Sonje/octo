@@ -20,32 +20,50 @@
       cursorBlink: true,
       fontSize: 14,
       fontFamily: 'JetBrains Mono, Menlo, Monaco, monospace',
-      theme: {
-        background: '#0d1117',
-        foreground: '#e6edf3',
-      }
+      theme: { background: '#0d1117', foreground: '#e6edf3' }
     });
 
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
     term.open(document.getElementById('terminal'));
-
-    // MUST call fit AFTER open AND after a layout tick
     requestAnimationFrame(() => fitAddon.fit());
 
-    // Token is passed in the URL by the CLI: ?token=abc123
-    const token = new URLSearchParams(location.search).get('token') || '';
-    const proto  = location.protocol === 'https:' ? 'wss' : 'ws';
-    const ws     = new WebSocket(`${proto}://${location.host}/ws?token=${token}`);
-    ws.binaryType = 'arraybuffer'; // CRITICAL — never omit this
+    // ── Figure out which WebSocket endpoint to use ──────────────────────────
+    //
+    // Two modes this page can be served in:
+    //
+    //   LOCAL mode  — served by `octo` CLI at localhost:7681
+    //                 path is always "/"
+    //                 WS connects to:  ws://localhost:7681/ws?token=<token>
+    //
+    //   TUNNEL mode — served by `octo server` at octo.sh/s/:id
+    //                 path is "/s/:id"
+    //                 WS connects to:  wss://octo.sh/s/:id  (same path, WS upgrade)
+    //
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    const path  = location.pathname;
+
+    let wsURL;
+    if (path.startsWith('/s/')) {
+      // TUNNEL mode — connect WS to the same /s/:id path
+      // ProxyHandler on the server handles the WS upgrade here
+      wsURL = `${proto}://${location.host}${path}`;
+    } else {
+      // LOCAL mode — connect WS to /ws with token
+      const token = new URLSearchParams(location.search).get('token') || '';
+      wsURL = `${proto}://${location.host}/ws?token=${token}`;
+    }
+
+    const ws = new WebSocket(wsURL);
+    ws.binaryType = 'arraybuffer';
 
     ws.onopen = () => {
-      // Send initial size immediately so PTY knows the terminal dimensions
+      // Send initial terminal size so the PTY knows its dimensions
       ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
     };
 
     ws.onmessage = (event) => {
-      term.write(new Uint8Array(event.data)); // CRITICAL — always Uint8Array, never string
+      term.write(new Uint8Array(event.data));
     };
 
     ws.onclose = () => term.writeln('\r\n\x1b[31m[session closed]\x1b[0m');
@@ -53,7 +71,7 @@
 
     term.onData((data) => {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(new TextEncoder().encode(data)) // raw binary — gorilla receives as BinaryMessage
+        ws.send(new TextEncoder().encode(data));
       }
     });
 
