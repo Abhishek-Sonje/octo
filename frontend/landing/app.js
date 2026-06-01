@@ -61,7 +61,6 @@ function switchView(view) {
 
 // Initialize indicator on load and handle resize
 window.addEventListener('load', () => {
-  // Initial position fix
   setTimeout(() => updateIndicator(btnLanding), 50);
 });
 
