@@ -12,6 +12,10 @@ Share your interactive terminal instantly over the web with sub-150ms latency. N
 - 🖥️ **Native PTY Isolation**: Renders ANSI color codes, curses interfaces, and standard keystrokes natively in xterm.js.
 
 ---
+<img width="1919" height="971" alt="Screenshot 2026-06-01 145508" src="https://github.com/user-attachments/assets/90e3eddb-6411-48ab-a736-85cf788c3edd" />
+
+<img width="1919" height="971" alt="image" src="https://github.com/user-attachments/assets/0541fd65-0183-44b6-8253-028ce2290b04" />
+---
 
 ## Installation
 
@@ -88,7 +92,3 @@ sequenceDiagram
 ```
 
 ---
-
-## License
-
-MIT License. See [LICENSE](LICENSE) for details.
