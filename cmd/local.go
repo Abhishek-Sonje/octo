@@ -6,6 +6,9 @@ import (
 	"embed"
 	"encoding/hex"
 	"fmt"
+	"html/template"
+	iofs "io/fs"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -53,14 +56,40 @@ func RunLocal(opts LocalOpts) error {
 	sessionID := randomAlphanumeric(5)
 	token := randomHex(32)
 
+	// ── Step 3.5: Parse templates and static FS ──────────────────────────────
+	tmpl, err := template.ParseFS(opts.FS, "frontend/session/index.html")
+	if err != nil {
+		return fmt.Errorf("failed to parse session template: %w", err)
+	}
+
+	sub, err := iofs.Sub(opts.FS, "frontend")
+	if err != nil {
+		return fmt.Errorf("failed to sub frontend FS: %w", err)
+	}
+
 	// ── Step 4: HTTP mux ─────────────────────────────────────────────────────
 	mux := http.NewServeMux()
 
+	// Serve static assets for session page
+	mux.Handle("/session/", http.FileServer(http.FS(sub)))
+
 	// Serve xterm.js session page
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		data, _ := opts.FS.ReadFile("frontend/session/index.html")
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
 		w.Header().Set("Content-Type", "text/html")
-		w.Write(data)
+		err = tmpl.Execute(w, struct {
+			SessionID string
+			Token     string
+		}{
+			SessionID: "local",
+			Token:     token,
+		})
+		if err != nil {
+			log.Println("local session template execution error:", err)
+		}
 	})
 
 	// sessionDone is closed when the first session ends — used for --once

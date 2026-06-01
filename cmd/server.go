@@ -3,7 +3,10 @@ package cmd
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
+	"html/template"
+	iofs "io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -29,18 +32,34 @@ import (
 //
 // embed.FS is passed from main.go — cmd/server.go cannot embed directly
 // because //go:embed paths are relative to the source file, not the project root.
-func RunServer(port int, fs embed.FS) error {
+func RunServer(port int, embedFS embed.FS) error {
 	// ── Step 1: Initialise registry ──────────────────────────────────────────
 	reg := tunnel.NewRegistry()
+
+	// ── Step 1.5: Parse templates and static FS ──────────────────────────────
+	tmpl, err := template.ParseFS(embedFS, "frontend/session/index.html")
+	if err != nil {
+		return fmt.Errorf("failed to parse session template: %w", err)
+	}
+
+	subFS, err := iofs.Sub(embedFS, "frontend")
+	if err != nil {
+		return fmt.Errorf("failed to sub frontend FS: %w", err)
+	}
+	fileServer := http.FileServer(http.FS(subFS))
 
 	// ── Step 2: Build chi router ─────────────────────────────────────────────
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	// Serve static assets for landing and session pages
+	r.Handle("/landing/*", fileServer)
+	r.Handle("/session/*", fileServer)
+
 	// GET / → landing page
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		data, err := fs.ReadFile("frontend/landing/index.html")
+		data, err := embedFS.ReadFile("frontend/landing/index.html")
 		if err != nil {
 			http.Error(w, "landing page not found", http.StatusInternalServerError)
 			return
@@ -57,6 +76,14 @@ func RunServer(port int, fs embed.FS) error {
 		)
 	})
 
+	// GET /status → active session count
+	r.Get("/status", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"active_sessions": reg.Count(),
+		})
+	})
+
 	// WS /tunnel/register → CLI registers its tunnel here
 	r.Get("/tunnel/register", tunnel.RegisterHandler(reg))
 
@@ -70,13 +97,32 @@ func RunServer(port int, fs embed.FS) error {
 			tunnel.ProxyHandler(reg)(w, r)
 			return
 		}
-		data, err := fs.ReadFile("frontend/session/index.html")
-		if err != nil {
-			http.Error(w, "session page not found", http.StatusInternalServerError)
+
+		sessionId := chi.URLParam(r, "sessionId")
+		_, ok := reg.Get(sessionId)
+		if !ok {
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusNotFound)
+			errorData, err := embedFS.ReadFile("frontend/error.html")
+			if err != nil {
+				w.Write([]byte("Session not found"))
+				return
+			}
+			w.Write(errorData)
 			return
 		}
+
 		w.Header().Set("Content-Type", "text/html")
-		w.Write(data)
+		err = tmpl.Execute(w, struct {
+			SessionID string
+			Token     string
+		}{
+			SessionID: sessionId,
+			Token:     "",
+		})
+		if err != nil {
+			log.Println("session template execution error:", err)
+		}
 	})
 
 	// ── Step 3: Start server ─────────────────────────────────────────────────
@@ -99,6 +145,9 @@ func RunServer(port int, fs embed.FS) error {
 	<-quit
 
 	log.Println("octo server: shutting down...")
+
+	// Close all active sessions in the registry to disconnect them cleanly
+	reg.Close()
 
 	// ── Step 5: Graceful shutdown ────────────────────────────────────────────
 	// 10s gives active tunnel sessions time to drain before the server closes.

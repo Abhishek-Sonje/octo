@@ -63,6 +63,25 @@ func (r *Registry) Remove(sessionID string) {
 	delete(r.sessions, sessionID)
 }
 
+// Count returns the number of active sessions in the registry.
+func (r *Registry) Count() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return len(r.sessions)
+}
+
+// Close closes all active sessions in the registry.
+func (r *Registry) Close() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for id, s := range r.sessions {
+		if s.Conn != nil {
+			s.Conn.Close()
+		}
+		delete(r.sessions, id)
+	}
+}
+
 // Wait blocks until ProxyHandler closes the session (browser disconnects).
 // Called by RegisterHandler to keep the CLI's HTTP connection alive.
 func (s *Session) Wait() {

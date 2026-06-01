@@ -12,10 +12,10 @@ import (
 	"github.com/abhishek-sonje/octo/cmd"
 )
 
-// frontendFS embeds both HTML pages at compile time.
+// frontendFS embeds the frontend directory at compile time.
 // Path is relative to this file (project root) — frontend/ is right here.
 //
-//go:embed frontend/landing/index.html frontend/session/index.html
+//go:embed frontend
 var frontendFS embed.FS
 
 func main() {
