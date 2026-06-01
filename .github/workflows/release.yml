@@ -30,7 +30,7 @@ jobs:
           GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o octo-darwin-arm64 .
 
       - name: Upload to GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: octo-*
         env:
