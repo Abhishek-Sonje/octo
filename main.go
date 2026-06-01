@@ -5,6 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
+
+	"github.com/joho/godotenv"
 
 	"github.com/abhishek-sonje/octo/cmd"
 )
@@ -16,10 +19,20 @@ import (
 var frontendFS embed.FS
 
 func main() {
+	// Attempt to load .env file, ignoring errors if it doesn't exist
+	_ = godotenv.Load()
+
+	defaultPort := 7681
+	if portStr := os.Getenv("OCTO_PORT"); portStr != "" {
+		if p, err := strconv.Atoi(portStr); err == nil {
+			defaultPort = p
+		}
+	}
+
 	// ── octo server ──────────────────────────────────────────────────────────
 	if len(os.Args) > 1 && os.Args[1] == "server" {
 		serverFlags := flag.NewFlagSet("server", flag.ExitOnError)
-		port := serverFlags.Int("port", 7681, "port to listen on")
+		port := serverFlags.Int("port", defaultPort, "port to listen on")
 		serverFlags.Parse(os.Args[2:])
 
 		if err := cmd.RunServer(*port, frontendFS); err != nil {
@@ -30,7 +43,7 @@ func main() {
 	}
 
 	// ── octo (CLI mode) ──────────────────────────────────────────────────────
-	port     := flag.Int("port",      7681,  "local port to listen on")
+	port     := flag.Int("port",      defaultPort,  "local port to listen on")
 	shell    := flag.String("shell",  "",    "shell to spawn (default: $SHELL → /bin/bash)")
 	noTunnel := flag.Bool("no-tunnel", false, "disable tunnel, local access only")
 	once     := flag.Bool("once",     false, "exit after first session disconnects")

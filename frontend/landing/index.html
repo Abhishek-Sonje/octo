@@ -25,7 +25,7 @@
 
       /* Layout Anchors */
       --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, monospace;
-      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Georgia, serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       --radius: 6px;
     }
 
@@ -42,9 +42,14 @@
     }
     
     body { 
-      background: var(--canvas); 
+      background-color: var(--canvas);
+      /* Light Grid Pattern Background */
+      background-image: 
+        linear-gradient(rgba(230, 228, 220, 0.5) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(230, 228, 220, 0.5) 1px, transparent 1px);
+      background-size: 32px 32px;
       color: var(--text-primary); 
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+      font-family: var(--font-sans); 
       font-size: 15px;
       line-height: 1.6; 
       min-height: 100dvh;
@@ -79,27 +84,61 @@
       font-weight: 700; 
       color: var(--text-primary); 
       text-decoration: none; 
+      width: 120px;
     }
     
     .nav-brand span { 
       color: var(--accent); 
     }
     
+    /* View Dial Segmented Control */
+    .view-dial {
+      display: flex;
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 4px;
+      position: relative;
+    }
+    
+    .dial-btn {
+      background: transparent;
+      border: none;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 8px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      z-index: 1;
+      transition: color 0.2s ease;
+      position: relative;
+    }
+    
+    .dial-btn.active {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    
+    .dial-indicator {
+      position: absolute;
+      top: 4px;
+      bottom: 4px;
+      left: 0;
+      background: var(--surface);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+      z-index: 0;
+    }
+
     .nav-links { 
       display: flex; 
       gap: 36px; 
-      align-items: center; 
-    }
-    
-    .nav-links a { 
-      color: var(--text-secondary); 
-      text-decoration: none; 
-      font-size: 14px; 
-      transition: color 150ms ease-out; 
-    }
-    
-    .nav-links a:hover { 
-      color: var(--text-primary); 
+      align-items: center;
+      width: 120px;
+      justify-content: flex-end;
     }
     
     .nav-gh {
@@ -111,6 +150,7 @@
       border-radius: var(--radius);
       color: var(--text-primary) !important; 
       font-size: 13px; 
+      text-decoration: none;
       background: var(--surface-card);
       transition: border-color 150ms ease-out, background-color 150ms ease-out;
     }
@@ -121,9 +161,18 @@
     }
 
     /* Focus Indicators & Tactile State Hooks */
-    a:focus-visible, button:focus-visible {
+    a:focus-visible, button:focus-visible, input:focus-visible {
       outline: 2px solid var(--accent);
       outline-offset: 2px;
+    }
+
+    /* View Containers */
+    .view-section {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .view-section.active-view {
+      opacity: 1;
     }
 
     /* Section 1: Hero Paradigm (Asymmetric Layout Grid) */
@@ -147,7 +196,7 @@
     
     h1 em { 
       font-style: italic; 
-      font-family: Georgia, serif;
+      font-family: var(--font-sans); /* Overrode serif to maintain font-sans consistency */
       color: var(--accent); 
     }
     
@@ -164,7 +213,7 @@
       display: flex; 
       align-items: center; 
       gap: 12px;
-      background: var(--surface); 
+      background: var(--surface-card); 
       border: 1px solid var(--border); 
       border-radius: var(--radius);
       padding: 14px 18px; 
@@ -173,6 +222,7 @@
       color: var(--text-primary);
       margin-bottom: 16px; 
       max-width: 480px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
     }
     
     .install-box .prompt { 
@@ -182,10 +232,13 @@
     
     .install-box .cmd { 
       flex: 1; 
+      overflow-x: auto;
+      white-space: nowrap;
     }
+    .install-box .cmd::-webkit-scrollbar { display: none; }
     
     .copy-btn {
-      background: var(--surface-card); 
+      background: var(--surface); 
       border: 1px solid var(--border); 
       border-radius: var(--radius);
       color: var(--text-primary); 
@@ -194,6 +247,7 @@
       padding: 5px 10px; 
       cursor: pointer; 
       transition: all 120ms ease-out;
+      flex-shrink: 0;
     }
     
     .copy-btn:hover { 
@@ -221,7 +275,7 @@
       background: var(--surface-code); 
       border-radius: var(--radius);
       overflow: hidden; 
-      box-shadow: 0 16px 48px rgba(25, 24, 22, 0.08);
+      box-shadow: 0 16px 48px rgba(25, 24, 22, 0.15);
       border: 1px solid var(--text-primary);
     }
     
@@ -232,6 +286,13 @@
       align-items: center; 
       gap: 8px;
     }
+
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+    }
+    .dot-r { background: #ff5f56; }
+    .dot-y { background: #ffbd2e; }
+    .dot-g { background: #27c93f; }
     
     .terminal-title {
       font-family: var(--font-mono);
@@ -275,6 +336,7 @@
       letter-spacing: -0.01em;
       margin-bottom: 48px;
       color: var(--text-primary);
+      text-align: center;
     }
 
     /* Section 2: Core Infrastructure Grid Layout */
@@ -282,6 +344,8 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 24px;
+      max-width: 960px;
+      margin: 0 auto;
     }
 
     .bento-cell {
@@ -289,6 +353,13 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 40px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.02);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .bento-cell:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.04);
     }
 
     .cell-title-group {
@@ -299,160 +370,105 @@
     }
 
     .cell-title-group h3 {
+      font-family: var(--font-sans);
       font-size: 18px;
       font-weight: 600;
       color: var(--text-primary);
     }
 
-    .cell-index {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--accent);
+    .cell-icon {
+      font-size: 20px;
     }
 
     .bento-cell p {
-      font-size: 14px;
+      font-size: 15px;
       color: var(--text-secondary);
       line-height: 1.6;
     }
 
-    /* Section 3: Stream Comparison Mechanics (Split-Screen Space) */
-    .split-layout {
-      display: grid;
-      grid-template-columns: 0.9fr 1.1fr;
-      gap: 64px;
-      align-items: start;
+    /* Join Session Mechanics */
+    .join-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 150px);
+      padding: 40px;
     }
 
-    .split-info p {
+    .join-container {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      padding: 48px 40px;
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 16px 48px rgba(25, 24, 22, 0.04);
+    }
+
+    .join-container h2 {
+      font-family: var(--font-sans);
+      font-size: 24px;
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+
+    .join-container p {
       color: var(--text-secondary);
-      font-size: 15px;
-      margin-bottom: 20px;
+      margin-bottom: 32px;
+      font-size: 14px;
     }
 
-    .comparison-stack {
+    .join-form {
       display: flex;
       flex-direction: column;
       gap: 16px;
     }
 
-    .comp-row {
-      background: var(--surface-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 20px 24px;
-    }
-
-    .comp-header {
-      display: flex;
-      justify-content: space-between;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      margin-bottom: 6px;
-    }
-
-    .comp-header .label {
-      color: var(--text-primary);
-      font-weight: 600;
-    }
-
-    .comp-header .value {
-      color: var(--accent);
-    }
-
-    .comp-bar-track {
-      height: 4px;
-      background: var(--surface);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .comp-bar-fill {
-      height: 100%;
-      background: var(--accent);
-    }
-
-    /* Section 4: Security Control Matrix Table Block */
-    .table-container {
+    .join-input {
       width: 100%;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: var(--surface-card);
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 14px;
-    }
-
-    th, td {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    th {
-      background: var(--surface);
+      padding: 16px;
       font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--text-secondary);
-      font-weight: 500;
-    }
-
-    tr:last-child td {
-      border-bottom: none;
-    }
-
-    .tech-badge {
-      font-family: var(--font-mono);
-      font-size: 12px;
-      color: var(--text-primary);
-      background: var(--surface);
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-
-    /* Section 5: Intentional Conversion Block */
-    .cta-panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 64px;
+      font-size: 20px;
       text-align: center;
+      letter-spacing: 0.25em;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .cta-panel h3 {
+    .join-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .join-input::placeholder {
+      color: #b5b2a5;
+      letter-spacing: normal;
+    }
+
+    .join-btn {
+      width: 100%;
+      padding: 14px;
       font-family: var(--font-sans);
-      font-size: 28px;
-      font-weight: 400;
-      margin-bottom: 16px;
-    }
-
-    .cta-panel p {
-      color: var(--text-secondary);
-      max-width: 48ch;
-      margin: 0 auto 32px;
-    }
-
-    .cta-action-btn {
-      display: inline-block;
+      font-size: 15px;
+      font-weight: 500;
       background: var(--text-primary);
       color: var(--text-light);
-      text-decoration: none;
-      padding: 12px 28px;
-      font-size: 14px;
-      font-weight: 500;
+      border: none;
       border-radius: var(--radius);
+      cursor: pointer;
       transition: background-color 150ms ease-out, transform 150ms ease-out;
     }
 
-    .cta-action-btn:hover {
-      background-color: #2b2926;
+    .join-btn:hover {
+      background: #2b2926;
     }
 
-    .cta-action-btn:active {
+    .join-btn:active {
       transform: scale(0.98);
     }
 
@@ -478,7 +494,7 @@
 
     /* Mobile Collapse Layer (< 968px Rules) */
     @media (max-width: 968px) {
-      .hero-grid, .split-layout {
+      .hero-grid {
         grid-template-columns: 1fr;
         gap: 48px;
         padding: 48px 24px;
@@ -495,10 +511,30 @@
       
       nav {
         padding: 0 24px;
+        height: auto;
+        min-height: 72px;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: center;
       }
 
-      .cta-panel {
-        padding: 40px 20px;
+      .nav-brand, .nav-links {
+        width: auto;
+      }
+
+      .view-dial {
+        order: 3;
+        width: 100%;
+        margin-bottom: 12px;
+      }
+      
+      .dial-btn {
+        flex: 1;
+        text-align: center;
+      }
+
+      .join-wrapper {
+        padding: 24px;
       }
     }
   </style>
@@ -508,10 +544,14 @@
 <header>
   <nav>
     <a class="nav-brand" href="/" aria-label="octo home"><span>▸</span> octo</a>
+    
+    <div class="view-dial" role="group" aria-label="View Toggle">
+      <button class="dial-btn active" id="btn-landing">Overview</button>
+      <button class="dial-btn" id="btn-join">Join Session</button>
+      <div class="dial-indicator"></div>
+    </div>
+
     <div class="nav-links">
-      <a href="#runtime">Runtime</a>
-      <a href="#performance">Metrics</a>
-      <a href="#security">Security Matrix</a>
       <a href="https://github.com/abhishek-sonje/octo" class="nav-gh" rel="noopener noreferrer" target="_blank">
         GitHub
       </a>
@@ -519,174 +559,119 @@
   </nav>
 </header>
 
-<main>
-  <div class="hero-grid">
-    <div class="hero-content">
-      <div class="hero-badge"><span>◆</span> v1.0.0 Stable Deployment</div>
-      <h1>Share your terminal <em>instantly</em></h1>
-      <p class="hero-sub">
-        Run octo via command line to initialize a cryptographically bound tunnel wrapper. Directly stream interactive shell context safely to browser endpoints with zero firewall configuration.
-      </p>
+<!-- MAIN LANDING VIEW -->
+<div id="view-landing" class="view-section active-view">
+  <main>
+    <div class="hero-grid">
+      <div class="hero-content">
+        <div class="hero-badge" style="font-family: var(--font-mono); font-size: 12px; color: var(--accent); margin-bottom: 16px;"><span>◆</span> Lightning Fast Terminal Sharing</div>
+        <h1>Share your terminal <em>instantly</em></h1>
+        <p class="hero-sub">
+          Run octo via command line to stream interactive shell context safely to browser endpoints. Zero firewall configuration, pure performance.
+        </p>
 
-      <div class="install-box">
-        <span class="prompt">$</span>
-        <span class="cmd" id="install-cmd">curl -fsSL octo.sh/install | sh</span>
-        <button class="copy-btn" id="copy-btn" onclick="copyInstall()" aria-label="Copy installation command">copy</button>
-      </div>
-      
-      <p class="hero-note">
-        Compatible natively with macOS and Linux architectures.
-      </p>
-    </div>
-
-    <div class="terminal-container" aria-label="Terminal stream configuration display">
-      <div class="terminal-bar">
-        <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
-        <span class="terminal-title">runtime — octo</span>
-      </div>
-      <div class="terminal-body">
-        <div><span class="t-prompt">~</span> <span class="t-cmd">octo</span></div>
-        <div>&nbsp;</div>
-        <div><span class="t-out">✓ active stream handshake verified</span></div>
-        <div>&nbsp;</div>
-        <div><span class="t-out">  Local link:  </span><span class="t-url">http://192.168.1.5:7681?t=f3a9…</span></div>
-        <div><span class="t-out">  Remote mesh: </span><span class="t-url">https://octo.sh/s/x9k2m</span></div>
-        <div>&nbsp;</div>
-        <div><span class="t-out">  Connection context up. Press Ctrl+C to terminate.</span></div>
-        <div>&nbsp;</div>
-        <div><span class="t-prompt">~</span> <span class="t-cursor"></span></div>
-      </div>
-    </div>
-  </div>
-
-  <div id="runtime" class="section">
-    <div class="section-headline">Zero Infrastructure Runtime Architecture</div>
-    <div class="bento-grid">
-      <div class="bento-cell">
-        <div class="cell-title-group">
-          <h3>Pseudo-Terminal Isolation</h3>
-          <span class="cell-index">01</span>
-        </div>
-        <p>Spawns shell environments natively within a clean internal PTY architecture, capturing standard raw interactive executions, complete ANSI structures, and screen color states without host interruption.</p>
-      </div>
-      
-      <div class="bento-cell">
-        <div class="cell-title-group">
-          <h3>Outbound Edge Handshake</h3>
-          <span class="cell-index">02</span>
-        </div>
-        <p>Establishes direct outbound multiplexed connections targeting remote relays. Avoids nested ingress configuration matrices, port allocations, or local router administration rules completely.</p>
-      </div>
-
-      <div class="bento-cell">
-        <div class="cell-title-group">
-          <h3>Hardware-Accelerated Display</h3>
-          <span class="cell-index">03</span>
-        </div>
-        <p>Web frames pipe cleanly downstream into structural client environments driven by xterm.js layers, yielding native render capabilities directly to remote engineers inside modern browsers.</p>
-      </div>
-
-      <div class="bento-cell">
-        <div class="cell-title-group">
-          <h3>Transient Session Drops</h3>
-          <span class="cell-index">04</span>
-        </div>
-        <p>Interrupt sequences destroy active virtual tunnel paths cleanly. Zero persistent states or terminal artifacts remain cached across our runtime switching paths after connection drop.</p>
-      </div>
-    </div>
-  </div>
-
-  <div id="performance" class="section">
-    <div class="split-layout">
-      <div class="split-info">
-        <div class="section-headline" style="margin-bottom: 24px;">Built for Low Latency Pipelines</div>
-        <p>octo bypasses massive containerization architectures and virtualization abstraction stacks to secure fast packet pipelines across raw edge relays.</p>
-        <p>By shifting computational pipelines from JavaScript or Python runtimes directly into a single compiled Go execution layer, internal connection loops operate closely to native speeds.</p>
-      </div>
-      
-      <div class="comparison-stack" aria-label="System latency metrics display">
-        <div class="comp-row">
-          <div class="comp-header">
-            <span class="label">octo Client Memory Usage</span>
-            <span class="value">12 MB</span>
-          </div>
-          <div class="comp-bar-track"><div class="comp-bar-fill" style="width: 15%"></div></div>
+        <div class="install-box">
+          <span class="prompt">$</span>
+          <span class="cmd" id="install-cmd">go install github.com/abhishek-sonje/octo@latest</span>
+          <button class="copy-btn" id="copy-btn" onclick="copyInstall()" aria-label="Copy installation command">copy</button>
         </div>
         
-        <div class="comp-row">
-          <div class="comp-header">
-            <span class="label">Traditional Node-based Proxies</span>
-            <span class="value">140 MB</span>
-          </div>
-          <div class="comp-bar-track"><div class="comp-bar-fill" style="width: 85%"></div></div>
-        </div>
+        <p class="hero-note">
+          Requires Go 1.20+ • Native macOS and Linux support
+        </p>
+      </div>
 
-        <div class="comp-row">
-          <div class="comp-header">
-            <span class="label">Average Session Connection Initialization</span>
-            <span class="value">140 ms</span>
-          </div>
-          <div class="comp-bar-track"><div class="comp-bar-fill" style="width: 25%"></div></div>
+      <div class="terminal-container" aria-label="Terminal stream configuration display">
+        <div class="terminal-bar">
+          <span class="dot dot-r"></span><span class="dot dot-y"></span><span class="dot dot-g"></span>
+          <span class="terminal-title">runtime — octo</span>
+        </div>
+        <div class="terminal-body">
+          <div><span class="t-prompt">~</span> <span class="t-cmd">octo</span></div>
+          <div>&nbsp;</div>
+          <div><span class="t-out">✓ active stream handshake verified</span></div>
+          <div>&nbsp;</div>
+          <div><span class="t-out">  Local link:  </span><span class="t-url">http://localhost:7681?t=f3a9…</span></div>
+          <div><span class="t-out">  Remote mesh: </span><span class="t-url">https://octo.sh/s/x9k2m</span></div>
+          <div>&nbsp;</div>
+          <div><span class="t-out">  Connection context up. Press Ctrl+C to terminate.</span></div>
+          <div>&nbsp;</div>
+          <div><span class="t-prompt">~</span> <span class="t-cursor"></span></div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div id="security" class="section">
-    <div class="section-headline">Security Framework Matrix</div>
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Layer Component</th>
-            <th>Protocol Parameters</th>
-            <th>Encryption System</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Tunnel Layer</td>
-            <td>Outbound Multiplexed Core</td>
-            <td><span class="tech-badge">TLS v1.3</span></td>
-          </tr>
-          <tr>
-            <td>Relay Routing</td>
-            <td>Memory-only Frame Buffer Routing</td>
-            <td><span class="tech-badge">Zero Storage</span></td>
-          </tr>
-          <tr>
-            <td>Browser Handshake</td>
-            <td>Secure WebSocket Channel Architecture</td>
-            <td><span class="tech-badge">WSS Encrypted</span></td>
-          </tr>
-          <tr>
-            <td>Access Control</td>
-            <td>Ephemeral Cryptographic Token Signatures</td>
-            <td><span class="tech-badge">SHA-256 Auth</span></td>
-          </tr>
-        </tbody>
-      </table>
+    <div id="features" class="section">
+      <div class="section-headline">Why Choose Octo?</div>
+      <div class="bento-grid">
+        <div class="bento-cell">
+          <div class="cell-title-group">
+            <h3>Zero Firewall Config</h3>
+            <span class="cell-icon">🛡️</span>
+          </div>
+          <p>By establishing outbound multiplexed TLS tunnels, octo bypasses complex NAT traversals, port-forwarding, and inbound network restrictions entirely.</p>
+        </div>
+        
+        <div class="bento-cell">
+          <div class="cell-title-group">
+            <h3>Sub-150ms Latency</h3>
+            <span class="cell-icon">⚡</span>
+          </div>
+          <p>Ditching bloated proxies and web-frameworks, octo uses a compiled Go byte-forwarding relay to provide instant, native-feeling terminal keystroke latency.</p>
+        </div>
+
+        <div class="bento-cell">
+          <div class="cell-title-group">
+            <h3>No Client Software</h3>
+            <span class="cell-icon">🌐</span>
+          </div>
+          <p>Unlike Tailscale or SSH endpoints, your visitors only need a web browser. No plugins, no configuration files, just send them the secure link and they're in.</p>
+        </div>
+
+        <div class="bento-cell">
+          <div class="cell-title-group">
+            <h3>Native PTY Isolation</h3>
+            <span class="cell-icon">🖥️</span>
+          </div>
+          <p>This isn't a read-only log tailer. Octo bridges real pseudo-terminals to the browser's xterm.js instance, perfectly capturing raw ANSI escape codes and colors.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>
+      Engineered by <a href="https://github.com/abhishek-sonje" rel="noopener noreferrer" target="_blank">abhishek-sonje</a>. Distributed under strict open source MIT parameters.
+    </p>
+  </footer>
+</div>
+
+<!-- JOIN SESSION VIEW -->
+<div id="view-join" class="view-section" style="display: none;">
+  <div class="join-wrapper">
+    <div class="join-container">
+      <h2>Connect to Session</h2>
+      <p>Enter the 5-character session coordinate to attach to the remote terminal environment.</p>
+      <form class="join-form" id="join-form">
+        <input 
+          type="text" 
+          id="session-code" 
+          class="join-input" 
+          placeholder="e.g. x9k2m" 
+          maxlength="5" 
+          autocomplete="off" 
+          spellcheck="false" 
+          required 
+        >
+        <button type="submit" class="join-btn">Connect</button>
+      </form>
     </div>
   </div>
-
-  <div class="section">
-    <div class="cta-panel">
-      <h3>Ready to share your terminal context?</h3>
-      <p>Deploy our open source single binary module to drop link coordinates right from your developer shell instantly.</p>
-      <a href="https://github.com/abhishek-sonje/octo" class="cta-action-btn" rel="noopener noreferrer" target="_blank">
-        View Project Source
-      </a>
-    </div>
-  </div>
-</main>
-
-<footer>
-  <p>
-    Engineered by <a href="https://github.com/abhishek-sonje" rel="noopener noreferrer" target="_blank">abhishek-sonje</a>. Distributed under strict open source MIT parameters.
-  </p>
-</footer>
+</div>
 
 <script>
+  // Install Command Copy
   function copyInstall() {
     const cmd = document.getElementById('install-cmd').textContent;
     const btn = document.getElementById('copy-btn');
@@ -701,6 +686,81 @@
       btn.textContent = 'failed';
     });
   }
+
+  // Dial & View Toggle Logic
+  const btnLanding = document.getElementById('btn-landing');
+  const btnJoin = document.getElementById('btn-join');
+  const indicator = document.querySelector('.dial-indicator');
+  const viewLanding = document.getElementById('view-landing');
+  const viewJoin = document.getElementById('view-join');
+  const sessionInput = document.getElementById('session-code');
+
+  function updateIndicator(activeBtn) {
+    if (!indicator || !activeBtn) return;
+    indicator.style.width = activeBtn.offsetWidth + 'px';
+    indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+  }
+
+  function switchView(view) {
+    if (view === 'landing') {
+      btnLanding.classList.add('active');
+      btnJoin.classList.remove('active');
+      
+      viewJoin.classList.remove('active-view');
+      setTimeout(() => {
+        viewJoin.style.display = 'none';
+        viewLanding.style.display = 'block';
+        setTimeout(() => viewLanding.classList.add('active-view'), 10);
+      }, 300);
+
+      updateIndicator(btnLanding);
+    } else {
+      btnJoin.classList.add('active');
+      btnLanding.classList.remove('active');
+      
+      viewLanding.classList.remove('active-view');
+      setTimeout(() => {
+        viewLanding.style.display = 'none';
+        viewJoin.style.display = 'block';
+        setTimeout(() => {
+          viewJoin.classList.add('active-view');
+          sessionInput.focus();
+        }, 10);
+      }, 300);
+
+      updateIndicator(btnJoin);
+    }
+  }
+
+  // Initialize indicator on load and handle resize
+  window.addEventListener('load', () => {
+    // Initial position fix
+    setTimeout(() => updateIndicator(btnLanding), 50);
+  });
+  
+  window.addEventListener('resize', () => {
+    updateIndicator(btnLanding.classList.contains('active') ? btnLanding : btnJoin);
+  });
+
+  btnLanding.addEventListener('click', () => switchView('landing'));
+  btnJoin.addEventListener('click', () => switchView('join'));
+
+  // Form Submission
+  document.getElementById('join-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = sessionInput.value.trim().toLowerCase();
+    if (code.length === 5) {
+      window.location.href = '/s/' + code;
+    } else {
+      sessionInput.style.borderColor = '#ff5f56';
+      setTimeout(() => sessionInput.style.borderColor = '', 1000);
+    }
+  });
+
+  // Filter input to alphanumeric
+  sessionInput.addEventListener('input', (e) => {
+    e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  });
 </script>
 </body>
 </html>

@@ -15,7 +15,14 @@ import (
 // Override this before calling Connect for local development:
 //
 //	tunnel.CloudServer = "ws://localhost:8080"
-var CloudServer = "wss://octo.sh"
+var CloudServer = getEnvOrDefault("OCTO_CLOUD_URL", "wss://octo.sh")
+
+func getEnvOrDefault(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
 
 // Connect dials the cloud relay server, registers the session, then
 // bridges the tunnel WebSocket ↔ PTY master (ptmx).
